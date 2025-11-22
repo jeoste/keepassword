@@ -27,6 +27,26 @@ jobs:
         run: npm run generate-icons
         continue-on-error: true
 
+      - name: Verify icons exist
+        run: |
+          echo "=== Vérification des icônes ==="
+          mkdir -p build
+          if [ -f "build/icon.icns" ]; then
+            echo "✅ icon.icns trouvé"
+          else
+            echo "⚠️  icon.icns non trouvé - création depuis icon.png"
+            if [ -f "build/icon.png" ]; then
+              echo "✅ icon.png trouvé dans build/"
+            elif [ -f "resources/icon.png" ]; then
+              echo "✅ Copie de resources/icon.png vers build/"
+              cp resources/icon.png build/icon.png
+            else
+              echo "❌ ERREUR: Aucune icône trouvée!"
+              exit 1
+            fi
+            # Note: electron-builder utilisera l'icône PNG si .icns n'est pas disponible
+          fi
+
       - name: Build application
         run: npm run build
 
@@ -40,6 +60,15 @@ jobs:
         run: |
           echo "=== Fichiers générés ==="
           ls -lah dist/ || echo "Dossier dist introuvable"
+          echo ""
+          echo "=== Vérification des fichiers d'installation ==="
+          if ls dist/*.dmg 1> /dev/null 2>&1; then
+            echo "✅ Fichier .dmg trouvé:"
+            ls -lh dist/*.dmg
+          else
+            echo "❌ ERREUR: Aucun fichier .dmg trouvé!"
+            exit 1
+          fi
           echo ""
           echo "=== Vérification des fichiers de mise à jour ==="
           if [ -f "dist/latest-mac.yml" ]; then
@@ -58,7 +87,7 @@ jobs:
             dist/*.zip
             dist/*.blockmap
             dist/*.yml
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 30
 
   build-windows:
@@ -80,6 +109,26 @@ jobs:
         run: npm run generate-icons
         continue-on-error: true
 
+      - name: Verify icons exist
+        run: |
+          echo "=== Vérification des icônes ==="
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          if (Test-Path "build\icon.ico") {
+            echo "✅ icon.ico trouvé"
+          } else {
+            echo "⚠️  icon.ico non trouvé - création depuis icon.png"
+            if (Test-Path "build\icon.png") {
+              echo "✅ icon.png trouvé dans build/"
+            } elseif (Test-Path "resources\icon.png") {
+              echo "✅ Copie de resources\icon.png vers build/"
+              Copy-Item resources\icon.png build\icon.png
+            } else {
+              echo "❌ ERREUR: Aucune icône trouvée!"
+              exit 1
+            }
+            # Note: electron-builder utilisera l'icône PNG si .ico n'est pas disponible
+          }
+
       - name: Build application
         run: npm run build
 
@@ -92,6 +141,16 @@ jobs:
         run: |
           echo "=== Fichiers générés ==="
           dir dist || echo "Dossier dist introuvable"
+          echo ""
+          echo "=== Vérification des fichiers d'installation ==="
+          $exeFiles = Get-ChildItem -Path dist -Filter *.exe -ErrorAction SilentlyContinue
+          if ($exeFiles) {
+            echo "✅ Fichier .exe trouvé:"
+            $exeFiles | ForEach-Object { Write-Host "  $($_.Name) - $([math]::Round($_.Length / 1MB, 2)) MB" }
+          } else {
+            echo "❌ ERREUR: Aucun fichier .exe trouvé!"
+            exit 1
+          }
           echo ""
           echo "=== Vérification des fichiers de mise à jour ==="
           if (Test-Path "dist\latest.yml") {
@@ -110,7 +169,7 @@ jobs:
             dist/*.zip
             dist/*.blockmap
             dist/*.yml
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 30
 
   release:
@@ -152,12 +211,41 @@ jobs:
       - name: List release files
         run: |
           echo "=== Fichiers Mac ==="
-          ls -lah ./release/mac/ || echo "Aucun fichier Mac"
+          if [ -d "./release/mac" ] && [ "$(ls -A ./release/mac 2>/dev/null)" ]; then
+            ls -lah ./release/mac/
+            echo ""
+            echo "✅ Fichiers Mac trouvés"
+          else
+            echo "❌ ERREUR: Aucun fichier Mac trouvé!"
+            exit 1
+          fi
           echo ""
           echo "=== Fichiers Windows ==="
-          ls -lah ./release/win/ || echo "Aucun fichier Windows"
+          if [ -d "./release/win" ] && [ "$(ls -A ./release/win 2>/dev/null)" ]; then
+            ls -lah ./release/win/
+            echo ""
+            echo "✅ Fichiers Windows trouvés"
+          else
+            echo "❌ ERREUR: Aucun fichier Windows trouvé!"
+            exit 1
+          fi
 
-      - name: Create Release
+      - name: Check if release exists
+        id: check_release
+        run: |
+          TAG_NAME="${{ steps.get_version.outputs.tag }}"
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release $TAG_NAME existe déjà"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release $TAG_NAME n'existe pas encore"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Create or Update Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_version.outputs.tag }}
@@ -189,6 +277,7 @@ jobs:
           draft: false
           prerelease: false
           make_latest: true
+          overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
