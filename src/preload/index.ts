@@ -21,32 +21,39 @@ const api = {
   
   // Update events
   onUpdateChecking: (callback: () => void) => {
-    ipcRenderer.on('update-checking', callback)
-    return () => ipcRenderer.removeListener('update-checking', callback)
+    const handler = () => callback()
+    ipcRenderer.on('update-checking', handler)
+    return () => ipcRenderer.removeListener('update-checking', handler)
   },
   onUpdateAvailable: (callback: (info: any) => void) => {
-    ipcRenderer.on('update-available', (_, info) => callback(info))
-    return () => ipcRenderer.removeListener('update-available', callback)
+    const handler = (_: any, info: any) => callback(info)
+    ipcRenderer.on('update-available', handler)
+    return () => ipcRenderer.removeListener('update-available', handler)
   },
   onUpdateNotAvailable: (callback: () => void) => {
-    ipcRenderer.on('update-not-available', callback)
-    return () => ipcRenderer.removeListener('update-not-available', callback)
+    const handler = () => callback()
+    ipcRenderer.on('update-not-available', handler)
+    return () => ipcRenderer.removeListener('update-not-available', handler)
   },
   onUpdateError: (callback: (error: string) => void) => {
-    ipcRenderer.on('update-error', (_, error) => callback(error))
-    return () => ipcRenderer.removeListener('update-error', callback)
+    const handler = (_: any, error: string) => callback(error)
+    ipcRenderer.on('update-error', handler)
+    return () => ipcRenderer.removeListener('update-error', handler)
   },
   onUpdateProgress: (callback: (progress: any) => void) => {
-    ipcRenderer.on('update-progress', (_, progress) => callback(progress))
-    return () => ipcRenderer.removeListener('update-progress', callback)
+    const handler = (_: any, progress: any) => callback(progress)
+    ipcRenderer.on('update-progress', handler)
+    return () => ipcRenderer.removeListener('update-progress', handler)
   },
   onUpdateDownloaded: (callback: () => void) => {
-    ipcRenderer.on('update-downloaded', callback)
-    return () => ipcRenderer.removeListener('update-downloaded', callback)
+    const handler = () => callback()
+    ipcRenderer.on('update-downloaded', handler)
+    return () => ipcRenderer.removeListener('update-downloaded', handler)
   },
   onClipboardCleared: (callback: () => void) => {
-    ipcRenderer.on('clipboard-cleared', callback)
-    return () => ipcRenderer.removeListener('clipboard-cleared', callback)
+    const handler = () => callback()
+    ipcRenderer.on('clipboard-cleared', handler)
+    return () => ipcRenderer.removeListener('clipboard-cleared', handler)
   }
 }
 
