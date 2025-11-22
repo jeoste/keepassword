@@ -24,7 +24,7 @@ win:
       arch:
         - x64
         - ia32
-  icon: build/icon.ico
+  icon: build/icon.png
   publisherName: Keepassword
   requestedExecutionLevel: asInvoker
 mac:

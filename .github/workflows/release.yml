@@ -42,20 +42,14 @@ jobs:
         run: |
           echo "=== Vérification des icônes ==="
           New-Item -ItemType Directory -Force -Path build | Out-Null
-          if (Test-Path "build\icon.ico") {
-            echo "✅ icon.ico trouvé"
+          if (Test-Path "build\icon.png") {
+            echo "✅ icon.png trouvé"
+          } elseif (Test-Path "resources\icon.png") {
+            echo "✅ Copie de resources\icon.png vers build/"
+            Copy-Item resources\icon.png build\icon.png
           } else {
-            echo "⚠️  icon.ico non trouvé - création depuis icon.png"
-            if (Test-Path "build\icon.png") {
-              echo "✅ icon.png trouvé dans build/"
-            } elseif (Test-Path "resources\icon.png") {
-              echo "✅ Copie de resources\icon.png vers build/"
-              Copy-Item resources\icon.png build\icon.png
-            } else {
-              echo "❌ ERREUR: Aucune icône trouvée!"
-              exit 1
-            }
-            # Note: electron-builder utilisera l'icône PNG si .ico n'est pas disponible
+            echo "❌ ERREUR: Aucune icône trouvée!"
+            exit 1
           }
 
       - name: Build application
