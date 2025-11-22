@@ -1,6 +1,6 @@
 ﻿{
   "name": "keepassword",
-  "version": "0.0.5",
+  "version": "0.0.51",
   "description": "Application de gestion de mots de passe moderne compatible KeePass",
   "main": "./out/main/index.js",
   "author": "",
