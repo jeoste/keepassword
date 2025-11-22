@@ -10,43 +10,6 @@ on:
       - 'README.md'
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate icons
-        run: npm run generate-icons
-        continue-on-error: true
-
-      - name: Build application
-        run: npm run build
-
-      - name: Build for macOS
-        run: npm run build:mac
-
-      - name: Upload Mac artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-build
-          path: |
-            dist/*.dmg
-            dist/*.zip
-            dist/*.blockmap
-            dist/latest-mac.yml
-          if-no-files-found: ignore
-          retention-days: 7
-
   build-windows:
     runs-on: windows-latest
     steps:
