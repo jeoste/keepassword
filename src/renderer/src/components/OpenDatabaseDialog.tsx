@@ -19,7 +19,7 @@ export function OpenDatabaseDialog({ open, onOpen, onClose }: OpenDatabaseDialog
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [pendingFilePath, setPendingFilePath] = useState<string | null>(null)
-  const { setDb, setPendingDb, unlock } = useKdbxStore()
+  const { setPendingDb, unlock } = useKdbxStore()
 
   const handleOpenFile = async () => {
     setLoading(true)
@@ -113,6 +113,7 @@ export function OpenDatabaseDialog({ open, onOpen, onClose }: OpenDatabaseDialog
         db.header.kdfParameters.remove('V')
         
         // Modifier directement l'UUID dans les items internes
+        // @ts-ignore - Accès à une propriété privée nécessaire pour la compatibilité
         const uuidItem = db.header.kdfParameters._items.find((item: any) => item.key === '$UUID')
         if (uuidItem) {
           uuidItem.value = uuidBytes.buffer
@@ -121,13 +122,16 @@ export function OpenDatabaseDialog({ open, onOpen, onClose }: OpenDatabaseDialog
         // Ajouter le paramètre R directement dans les items
         // Le paramètre R doit être de type Int64 (type 5)
         const rounds = new Kdbx.Int64(60000, 0)
+        // @ts-ignore - Accès à une propriété privée nécessaire pour la compatibilité
         db.header.kdfParameters._items.push({
           key: 'R',
           type: 5, // Type Int64
           value: rounds
         })
         // Mettre à jour la map interne
+        // @ts-ignore - Accès à une propriété privée nécessaire pour la compatibilité
         if (db.header.kdfParameters._map) {
+          // @ts-ignore - Accès à une propriété privée nécessaire pour la compatibilité
           db.header.kdfParameters._map.set('R', {
             key: 'R',
             type: 5,

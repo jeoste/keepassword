@@ -166,7 +166,7 @@ export function EntryDetails({ entry }: EntryDetailsProps) {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => handleCopy(currentEntry.username, 'Nom d\'utilisateur')}
+                onClick={() => handleCopy(currentEntry.username || '', 'Nom d\'utilisateur')}
               >
                 <Copy className="h-4 w-4" />
               </Button>

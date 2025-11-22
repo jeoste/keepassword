@@ -5,7 +5,6 @@ import { Label } from './ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { useKdbxStore } from '@renderer/lib/kdbx-store'
 import { toast } from 'sonner'
-import { Kdbx } from 'kdbxweb'
 
 interface UnlockDialogProps {
   open: boolean
@@ -15,7 +14,7 @@ interface UnlockDialogProps {
 export function UnlockDialog({ open, onUnlocked }: UnlockDialogProps) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { db, unlock } = useKdbxStore()
+  const { unlock } = useKdbxStore()
 
   const handleUnlock = async () => {
     if (!password) {
