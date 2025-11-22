@@ -17,7 +17,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon: process.platform === 'win32' ? icon : process.platform === 'linux' ? icon : undefined,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -32,8 +32,6 @@ function createWindow(): void {
 
   mainWindow.on('closed', () => {
     mainWindow = null
-    currentDb = null
-    currentDbPath = null
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -52,6 +50,10 @@ function createWindow(): void {
 // Auto-updater configuration
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
+
+// Configuration pour GitHub Releases
+// electron-updater détecte automatiquement la configuration depuis electron-builder.yml
+// Assurez-vous que le package.json contient "homepage": "https://github.com/yourusername/keepassword"
 
 autoUpdater.on('checking-for-update', () => {
   mainWindow?.webContents.send('update-checking')

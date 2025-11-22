@@ -23,8 +23,10 @@ win:
     - target: nsis
       arch:
         - x64
+        - ia32
   icon: build/icon.ico
   publisherName: Keepassword
+  requestedExecutionLevel: asInvoker
 mac:
   target:
     - target: dmg
@@ -33,6 +35,8 @@ mac:
         - arm64
   icon: build/icon.icns
   category: public.app-category.utilities
+  hardenedRuntime: true
+  gatekeeperAssess: false
 linux:
   target:
     - target: AppImage
@@ -45,8 +49,9 @@ nsis:
   allowToChangeInstallationDirectory: true
 publish:
   provider: github
-  owner: yourusername
+  owner: jeoste
   repo: keepassword
   releaseType: release
+  private: false
 
 

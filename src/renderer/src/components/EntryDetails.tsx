@@ -5,7 +5,8 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
-import { Eye, EyeOff, Copy, Save } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'
+import { Eye, EyeOff, Copy, Save, Dice1 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import * as Kdbx from 'kdbxweb'
@@ -19,6 +20,12 @@ export function EntryDetails({ entry }: EntryDetailsProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [editedEntry, setEditedEntry] = useState<Partial<Entry> | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
+  const [showPasswordGenerator, setShowPasswordGenerator] = useState(false)
+  const [passwordLength, setPasswordLength] = useState(16)
+  const [includeUppercase, setIncludeUppercase] = useState(true)
+  const [includeLowercase, setIncludeLowercase] = useState(true)
+  const [includeNumbers, setIncludeNumbers] = useState(true)
+  const [includeSymbols, setIncludeSymbols] = useState(true)
 
   if (!entry) {
     return (
@@ -67,6 +74,60 @@ export function EntryDetails({ entry }: EntryDetailsProps) {
       return password.getText()
     }
     return password || ''
+  }
+
+  const generatePassword = (): string => {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz'
+    const numbers = '0123456789'
+    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?'
+    
+    let charset = ''
+    if (includeUppercase) charset += uppercase
+    if (includeLowercase) charset += lowercase
+    if (includeNumbers) charset += numbers
+    if (includeSymbols) charset += symbols
+    
+    // S'assurer qu'au moins un type de caractère est sélectionné
+    if (charset.length === 0) {
+      charset = lowercase + numbers
+    }
+    
+    // Générer le mot de passe
+    let password = ''
+    const array = new Uint8Array(passwordLength)
+    crypto.getRandomValues(array)
+    
+    for (let i = 0; i < passwordLength; i++) {
+      password += charset[array[i] % charset.length]
+    }
+    
+    // S'assurer que le mot de passe contient au moins un caractère de chaque type sélectionné
+    if (includeUppercase && !/[A-Z]/.test(password)) {
+      const randomIndex = Math.floor(Math.random() * passwordLength)
+      password = password.substring(0, randomIndex) + uppercase[Math.floor(Math.random() * uppercase.length)] + password.substring(randomIndex + 1)
+    }
+    if (includeLowercase && !/[a-z]/.test(password)) {
+      const randomIndex = Math.floor(Math.random() * passwordLength)
+      password = password.substring(0, randomIndex) + lowercase[Math.floor(Math.random() * lowercase.length)] + password.substring(randomIndex + 1)
+    }
+    if (includeNumbers && !/[0-9]/.test(password)) {
+      const randomIndex = Math.floor(Math.random() * passwordLength)
+      password = password.substring(0, randomIndex) + numbers[Math.floor(Math.random() * numbers.length)] + password.substring(randomIndex + 1)
+    }
+    if (includeSymbols && !/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
+      const randomIndex = Math.floor(Math.random() * passwordLength)
+      password = password.substring(0, randomIndex) + symbols[Math.floor(Math.random() * symbols.length)] + password.substring(randomIndex + 1)
+    }
+    
+    return password
+  }
+
+  const handleGeneratePassword = () => {
+    const newPassword = generatePassword()
+    handleFieldChange('password', newPassword)
+    setShowPasswordGenerator(false)
+    toast.success('Mot de passe généré')
   }
 
   return (
@@ -124,6 +185,14 @@ export function EntryDetails({ entry }: EntryDetailsProps) {
               <Button
                 variant="outline"
                 size="icon"
+                onClick={() => setShowPasswordGenerator(true)}
+                title="Générer un mot de passe"
+              >
+                <Dice1 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -176,6 +245,93 @@ export function EntryDetails({ entry }: EntryDetailsProps) {
           )}
         </div>
       </div>
+
+      <Dialog open={showPasswordGenerator} onOpenChange={setShowPasswordGenerator}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Générer un mot de passe</DialogTitle>
+            <DialogDescription>
+              Configurez les options pour générer un mot de passe sécurisé.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="password-length">Longueur : {passwordLength}</Label>
+              <input
+                id="password-length"
+                type="range"
+                min="8"
+                max="128"
+                value={passwordLength}
+                onChange={(e) => setPasswordLength(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>8</span>
+                <span>128</span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="include-uppercase"
+                  checked={includeUppercase}
+                  onChange={(e) => setIncludeUppercase(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="include-uppercase" className="cursor-pointer">
+                  Majuscules (A-Z)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="include-lowercase"
+                  checked={includeLowercase}
+                  onChange={(e) => setIncludeLowercase(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="include-lowercase" className="cursor-pointer">
+                  Minuscules (a-z)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="include-numbers"
+                  checked={includeNumbers}
+                  onChange={(e) => setIncludeNumbers(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="include-numbers" className="cursor-pointer">
+                  Chiffres (0-9)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="include-symbols"
+                  checked={includeSymbols}
+                  onChange={(e) => setIncludeSymbols(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="include-symbols" className="cursor-pointer">
+                  Symboles (!@#$%...)
+                </Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordGenerator(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleGeneratePassword} disabled={!includeUppercase && !includeLowercase && !includeNumbers && !includeSymbols}>
+              Générer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ScrollArea>
   )
 }
