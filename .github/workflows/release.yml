@@ -8,88 +8,6 @@ on:
     types: [created]
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate icons
-        run: npm run generate-icons
-        continue-on-error: true
-
-      - name: Verify icons exist
-        run: |
-          echo "=== Vérification des icônes ==="
-          mkdir -p build
-          if [ -f "build/icon.icns" ]; then
-            echo "✅ icon.icns trouvé"
-          else
-            echo "⚠️  icon.icns non trouvé - création depuis icon.png"
-            if [ -f "build/icon.png" ]; then
-              echo "✅ icon.png trouvé dans build/"
-            elif [ -f "resources/icon.png" ]; then
-              echo "✅ Copie de resources/icon.png vers build/"
-              cp resources/icon.png build/icon.png
-            else
-              echo "❌ ERREUR: Aucune icône trouvée!"
-              exit 1
-            fi
-            # Note: electron-builder utilisera l'icône PNG si .icns n'est pas disponible
-          fi
-
-      - name: Build application
-        run: npm run build
-
-      - name: Build for macOS
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npm run build:mac
-
-      - name: Verify Mac build files
-        run: |
-          echo "=== Fichiers générés ==="
-          ls -lah dist/ || echo "Dossier dist introuvable"
-          echo ""
-          echo "=== Vérification des fichiers d'installation ==="
-          if ls dist/*.dmg 1> /dev/null 2>&1; then
-            echo "✅ Fichier .dmg trouvé:"
-            ls -lh dist/*.dmg
-          else
-            echo "❌ ERREUR: Aucun fichier .dmg trouvé!"
-            exit 1
-          fi
-          echo ""
-          echo "=== Vérification des fichiers de mise à jour ==="
-          if [ -f "dist/latest-mac.yml" ]; then
-            echo "✅ latest-mac.yml trouvé"
-            cat dist/latest-mac.yml
-          else
-            echo "⚠️  latest-mac.yml non trouvé - les mises à jour automatiques ne fonctionneront pas"
-          fi
-
-      - name: Upload Mac artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-build
-          path: |
-            dist/*.dmg
-            dist/*.zip
-            dist/*.blockmap
-            dist/*.yml
-          if-no-files-found: error
-          retention-days: 30
-
   build-windows:
     runs-on: windows-latest
     steps:
@@ -101,6 +19,17 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+
+      - name: Remove BOM from package.json
+        run: |
+          $content = Get-Content -Path "package.json" -Raw
+          if ($content[0] -eq [char]0xFEFF) {
+            $content = $content.Substring(1)
+            [System.IO.File]::WriteAllText("package.json", $content, (New-Object System.Text.UTF8Encoding $false))
+            echo "✅ BOM removed from package.json"
+          } else {
+            echo "✅ No BOM found in package.json"
+          }
 
       - name: Install dependencies
         run: npm ci
@@ -173,19 +102,13 @@ jobs:
           retention-days: 30
 
   release:
-    needs: [build-mac, build-windows]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download Mac artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: mac-build
-          path: ./release/mac
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
@@ -210,16 +133,6 @@ jobs:
 
       - name: List release files
         run: |
-          echo "=== Fichiers Mac ==="
-          if [ -d "./release/mac" ] && [ "$(ls -A ./release/mac 2>/dev/null)" ]; then
-            ls -lah ./release/mac/
-            echo ""
-            echo "✅ Fichiers Mac trouvés"
-          else
-            echo "❌ ERREUR: Aucun fichier Mac trouvé!"
-            exit 1
-          fi
-          echo ""
           echo "=== Fichiers Windows ==="
           if [ -d "./release/win" ] && [ "$(ls -A ./release/win 2>/dev/null)" ]; then
             ls -lah ./release/win/
@@ -255,10 +168,6 @@ jobs:
             
             ### 📦 Téléchargements
             
-            **macOS:**
-            - Téléchargez le fichier `.dmg` pour installer l'application
-            - Compatible avec Intel (x64) et Apple Silicon (arm64)
-            
             **Windows:**
             - Téléchargez le fichier `.exe` pour installer l'application
             - Compatible avec Windows x64 et ia32
@@ -272,7 +181,6 @@ jobs:
             
             Consultez les commits pour voir les changements de cette version.
           files: |
-            ./release/mac/*
             ./release/win/*
           draft: false
           prerelease: false
