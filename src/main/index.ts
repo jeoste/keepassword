@@ -53,7 +53,10 @@ autoUpdater.autoInstallOnAppQuit = true
 
 // Configuration pour GitHub Releases
 // electron-updater détecte automatiquement la configuration depuis electron-builder.yml
-// Assurez-vous que le package.json contient "homepage": "https://github.com/yourusername/keepassword"
+// et package.json (homepage). La configuration est automatique si :
+// - electron-builder.yml contient publish.provider: github
+// - package.json contient homepage avec l'URL GitHub
+// - Les fichiers latest.yml sont présents dans les releases GitHub
 
 autoUpdater.on('checking-for-update', () => {
   mainWindow?.webContents.send('update-checking')

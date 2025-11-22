@@ -53,5 +53,7 @@ publish:
   repo: keepassword
   releaseType: release
   private: false
+  # Les fichiers latest.yml seront automatiquement générés par electron-builder
+  # et publiés dans les releases GitHub pour permettre les mises à jour automatiques
 
 

@@ -165,10 +165,38 @@ git push origin v1.0.1
 
 ### Fonctionnement des mises à jour
 
-- L'application vérifie automatiquement les mises à jour au démarrage
-- Les utilisateurs peuvent également vérifier manuellement via l'interface
-- Les mises à jour sont téléchargées depuis GitHub Releases
-- L'installation se fait automatiquement au redémarrage de l'application
+Lorsque vous créez une release (via tag ou interface GitHub) :
+
+1. **GitHub Actions construit automatiquement** :
+   - Application macOS (`.dmg` pour Intel et Apple Silicon)
+   - Application Windows (`.exe` pour x64 et ia32)
+   - Fichiers de métadonnées (`latest.yml`, `latest-mac.yml`) nécessaires pour les mises à jour
+
+2. **Les fichiers sont publiés dans la release GitHub** :
+   - Les utilisateurs peuvent télécharger manuellement les installateurs
+   - Les fichiers de métadonnées permettent à l'application de détecter les nouvelles versions
+
+3. **Mise à jour automatique pour les utilisateurs** :
+   - L'application vérifie automatiquement les mises à jour au démarrage
+   - Les utilisateurs peuvent également vérifier manuellement via l'interface
+   - Les mises à jour sont téléchargées depuis GitHub Releases
+   - L'installation se fait automatiquement au redémarrage de l'application
+
+### Fichiers générés dans chaque release
+
+Chaque release contient :
+
+**macOS:**
+- `Keepassword-{version}-mac.dmg` - Installateur pour macOS
+- `Keepassword-{version}-mac.zip` - Archive ZIP
+- `latest-mac.yml` - Métadonnées pour les mises à jour automatiques
+
+**Windows:**
+- `Keepassword Setup {version}.exe` - Installateur pour Windows
+- `Keepassword-{version}-win.zip` - Archive ZIP
+- `latest.yml` - Métadonnées pour les mises à jour automatiques
+
+Les fichiers `.yml` sont essentiels pour que electron-updater détecte les nouvelles versions.
 
 ## Technologies
 
