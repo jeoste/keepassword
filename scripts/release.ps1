@@ -84,8 +84,9 @@ if ($confirm -ne "y" -and $confirm -ne "Y") {
 
 # Mettre à jour la version dans package.json
 Write-Info "Mise à jour de la version dans package.json..."
-$packageJson.version = $Version
-$packageJson | ConvertTo-Json -Depth 10 | Set-Content "package.json" -Encoding UTF8
+$content = Get-Content "package.json" -Raw -Encoding UTF8
+$content = $content -replace '"version":\s*"[^"]*"', "`"version`": `"$Version`""
+$content | Set-Content "package.json" -NoNewline -Encoding UTF8
 
 # Vérifier que la mise à jour a fonctionné
 $updatedPackageJson = Get-Content "package.json" | ConvertFrom-Json
